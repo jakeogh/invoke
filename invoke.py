@@ -49,29 +49,32 @@ def generator(f):
     return update_wrapper(new_func, f)
 
 @cli.command('makeints')
-@click.option('--start', type=int, default=1)
+@click.option('--start', type=int, default=0)
 @generator
 def makeints(start):
     while True:
         start = start + 1
+        if start > 3:
+            quit(0)
         yield start
 
 @cli.command('display')
 @processor
-@click.pass_context
-def display(ctx, someints):
+def display(someints):
     print("entering display()")
     for someint in someints:
-        print("display() someint:", someint) #why does this not print when view() calls ctx.invoke(display)?
+        print("display() someint:", someint) #why does this not print when view() calls ctx.forward(display)?
         yield someint
 
 @cli.command('view')
 @processor
-@click.pass_context
-def view(ctx, someints):
+def view(someints):
+#    ctx = click.get_current_context()
+#    ctx.forward(display)
     for someint in someints:
         print("view() someint:", someint)
-        returnval = ctx.invoke(display)
+        ctx = click.get_current_context()
+        ctx.forward(display)
         yield someint
 
 
