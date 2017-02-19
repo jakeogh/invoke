@@ -2,6 +2,33 @@
 from functools import update_wrapper
 import click
 
+# attempt to use http://click.pocoo.org/6/advanced/#invoking-other-commands
+# with command chain like https://github.com/pallets/click/blob/master/examples/imagepipe/imagepipe.py
+#
+# Install:
+# sudo python setup.py install
+#
+# Usage:
+# invoke makeints view     # this should call disp() via ctx.forward(disp) but it does not
+# invoke makeints disp     # this works as expected
+#
+# Actual output:
+#
+# $ invoke makeints view
+# view() someint: 1
+# view() someint: 2
+# view() someint: 3
+#
+# Desired output:
+#
+# $ invoke makeints view
+# view() someint: 1
+# disp() someint: 1
+# view() someint: 2
+# disp() someint: 2
+# view() someint: 3
+# disp() someint: 3
+
 
 @click.group(chain=True)
 def cli():
@@ -49,48 +76,43 @@ def generator(f):
     return update_wrapper(new_func, f)
 
 @cli.command('makeints')
-@click.option('--start', type=int, default=0)
 @generator
-def makeints(start):
+def makeints(start=0):
     while True:
         start = start + 1
         if start > 3:
             quit(0)
         yield start
 
-@cli.command('display')
+@cli.command('disp')
 @processor
-def display(someints):
-    print("entering display()")
+def disp(someints):
     for someint in someints:
-        print("display() someint:", someint) #why does this not print when view() calls ctx.forward(display)?
+        print("disp() someint:", someint) #why does this not print when view() calls ctx.forward(disp)?
         yield someint
 
 @cli.command('view')
 @processor
 def view(someints):
-#    ctx = click.get_current_context()
-#    ctx.forward(display)
     for someint in someints:
         print("view() someint:", someint)
         ctx = click.get_current_context()
-        ctx.forward(display)
+        ctx.forward(disp)
         yield someint
 
-
-@cli.command()
-@click.option('--count', default=1)
-def test(count):
-    click.echo('Count: %d' % count)
-
-@cli.command()
-@click.option('--count', default=1)
-@click.pass_context
-def dist(ctx, count):
-    ctx.forward(test)
-    ctx.invoke(test, count=42)
-
-#if __name__ == '__main__':
-#    #dist()
-#    makeints()
-
+## working ctx.invoke and ctx.forward example
+## $ invoke dist
+## 1
+## 42
+#
+#@cli.command()
+#@click.option('--count', default=1)
+#def test(count):
+#    click.echo('Count: %d' % count)
+#
+#@cli.command()
+#@click.option('--count', default=1)
+#@click.pass_context
+#def dist(ctx, count):
+#    ctx.forward(test)
+#    ctx.invoke(test, count=42)
