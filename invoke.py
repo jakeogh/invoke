@@ -6,7 +6,8 @@ import click
 # with command chain like https://github.com/pallets/click/blob/master/examples/imagepipe/imagepipe.py
 #
 # Install:
-# sudo python setup.py install
+# git clone https://github.com/jakeogh/invoke.git
+# python setup.py install
 #
 # Usage:
 # invoke makeints view     # this should call disp() via ctx.forward(disp) but it does not
@@ -28,6 +29,10 @@ import click
 # disp() someint: 2
 # view() someint: 3
 # disp() someint: 3
+
+# Note:
+# $ invoke makeints disp view
+# # works as expected
 
 
 @click.group(chain=True)
@@ -97,7 +102,8 @@ def view(someints):
     for someint in someints:
         print("view() someint:", someint)
         ctx = click.get_current_context()
-        ctx.forward(disp)
+        #from pudb import set_trace; set_trace()
+        ctx.forward(disp) #why does this not call display()?
         yield someint
 
 ## working ctx.invoke and ctx.forward example
